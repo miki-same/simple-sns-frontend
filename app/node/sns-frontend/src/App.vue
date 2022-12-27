@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {onBeforeMount, onMounted, reactive, ref} from 'vue'
+import { onBeforeMount, onMounted, reactive, ref } from 'vue'
 import axios from 'axios'
 
-const posts=ref<Array<typeOfPosts>|undefined>();
+const posts = ref<Array<typeOfPosts> | undefined>();
 
 type typeOfPosts = {
   message: string
@@ -22,7 +22,7 @@ onMounted(() => {
     endPoint
   ).then(
     (response) => {
-      posts.value=response.data;
+      posts.value = response.data;
       for (const post of posts.value) {
         console.log(post.message);
       }
@@ -30,74 +30,136 @@ onMounted(() => {
   )
 })
 
+const foo = () => {
+  console.log("posted!");
+}
+
+const unixTimeToDate = (time:number) => {
+  let dateTime = new Date(time*1000);
+  return dateTime.toLocaleDateString('ja-JP')+' '+dateTime.toLocaleTimeString('ja-JP');
+}
+
+const login = () => {
+  console.log('login');
+  axios.post('https://sns-fastapi-eidnhgfbzq-an.a.run.app/token',{
+    username:'foo',
+    password:'bar'
+  })
+  .then(res => {
+    console.log(res);
+
+  })
+  .catch( e => {
+    alert("ログインに失敗しました");
+    console.log(e);
+  })
+}
+
 </script>
 
 <template>
-<div class="w-full mx-auto">
-  <header>
-    <div class="navbar bg-base-100">
-      <div class="flex-none">
-        <button class="btn btn-square btn-ghost">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-      </div>
-      <div class="flex-1">
-        <a class="btn btn-ghost normal-case text-xl">Simplest</a>
-      </div>
-      <div class="flex-none">
-        <button class="btn btn-square btn-ghost">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-        </button>
-      </div>
-      <div class="flex-none">
-        <button class="btn">ログイン</button>
-      </div>
-      <div class="flex-none">
-        <button class="btn">新規登録</button>
-      </div>
-    </div>
-  </header>
-  <!-- The button to open modal -->
-  <label for="my-modal" class="btn mb-4">open modal</label>
+  <div class="w-full mx-auto">
 
-  <!-- Put this part before </body> tag -->
-  <input type="checkbox" id="my-modal" class="modal-toggle" />
-  <div class="modal">
-    <div class="modal-box">
-      <h3 class="font-bold text-lg">SimpleSNSへようこそ!!</h3>
-      <p class="py-4">さっそく何か投稿してみましょう。</p>
-      <p>あなたの話を誰かが聞いてくれます！</p>
-      <div class="modal-action">
-        <label for="my-modal" class="btn">わかった!</label>
+    <header>
+      <div class="navbar bg-base-100">
+        <div class="flex-none">
+          <label for="my-drawer" class="btn btn-square btn-ghost drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              class="inline-block w-5 h-5 stroke-current">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </label>
+        </div>
+        <div class="flex-1">
+          <a class="btn btn-ghost normal-case text-xl">Simplest</a>
+        </div>
+
+        <!-- The button to open modal -->
+        <label for="login-btn" class="btn flex-none">ログイン</label>
+        <!-- Put this part before </body> tag -->
+        <input type="checkbox" id="login-btn" class="modal-toggle" />
+        <div class="modal">
+          <div class="modal-box">
+            <h4 class="normal-case text-2xl font-midium">SimpleSNSへログイン</h4>
+            <!--TODO: ログインを実装 ログインボタンを閉じるボタンに変更-->
+            <form v-on:submit="login">
+              <input type="text" placeholder="ID" class="input input-bordered w-full max-w-xs" />
+              <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs" />
+              <button class="btn btn-primary w-full max-w-xs">ログイン</button>
+            </form>
+            <div class="modal-action">
+              <label for="login-btn" class="btn">閉じる</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- The button to open modal -->
+        <label for="register-btn" class="btn flex-none">新規登録</label>
+        <!-- Put this part before </body> tag -->
+        <input type="checkbox" id="register-btn" class="modal-toggle" />
+        <div class="modal">
+          <div class="modal-box">
+            <h4 class="normal-case text-2xl font-midium">SimpleSNSへ登録</h4>
+            <form>
+              <input type="text" placeholder="ID" class="input input-bordered w-full max-w-xs" />
+              <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs" />
+            </form>
+            <div class="modal-action">
+              <label for="register-btn" class="btn">新規登録</label>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <form>
-    <input type="text" placeholder="Type here" class="input input-bordered input-primary w-full max-w-xs mb-4" />
-    <button class="btn btn-primary">投稿</button>
-  </form>
-  <div class="container">
-  <ul>
-    <li v-for="post in posts" :key="post.post_id">
-      <div class="card w-full bg-base-100 shadow-xl mx-auto mb-3">
-      <div class="card-body">
-        <h2 class="card-title">{{ post.posted_by }}</h2>
-        <p class="text-lg">{{ post.message }}</p>
-      <div class="card-actions justify-end">
-        <button class="btn btn-primary">返信</button>
-        <label class="swap swap-rotate text-5xl">
-  
-        <!-- this hidden checkbox controls the state -->
-        <input type="checkbox" />
-        <div class="swap-on">💖</div>
-        <div class="swap-off">🤍</div>
-        </label>
+    </header>
+
+    <div class="drawer">
+      <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content">
+
+        <body class="my-3">
+          <form v-on:submit="foo">
+            <textarea placeholder="Type your thoughts!"
+              class="textarea textarea-primary w-96 h-28 max-w-xs mb-8"></textarea>
+            <button class="btn btn-primary">投稿</button>
+          </form>
+
+          <div class="container">
+            <ul>
+              <li v-for="post in posts?.reverse()" :key="post.post_id">
+                <div class="card w-full bg-base-100 shadow-xl mx-auto mb-3">
+                  <div class="card-body">
+                    <h2 class="card-title">{{ post.posted_by }}</h2>
+                    <p class="text-lg">{{ post.message }}</p>
+                    <p >{{ unixTimeToDate(post.posted_at) }}</p>
+                    <div class="card-actions justify-end">
+                      <button class="btn btn-primary">返信</button>
+                      <label class="swap swap-rotate text-5xl">
+
+                        <!-- this hidden checkbox controls the state -->
+                        <input type="checkbox" />
+                        <div class="swap-on">💖</div>
+                        <div class="swap-off">🤍</div>
+                      </label>
+
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </body>
 
       </div>
+      <div class="drawer-side">
+        <label for="my-drawer" class="drawer-overlay"></label>
+        <ul class="menu p-4 w-80 bg-base-100 text-base-content">
+          <!-- Sidebar content here -->
+          <li><a>フォロー</a></li>
+          <li><a>フォロワー</a></li>
+
+        </ul>
       </div>
     </div>
-    </li>
-  </ul>
+
   </div>
-</div>
 </template>
