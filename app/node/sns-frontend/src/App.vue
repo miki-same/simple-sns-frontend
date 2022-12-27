@@ -30,32 +30,6 @@ onMounted(() => {
   )
 })
 
-const dummyPosts = [
-  {
-    "message": "こんにちは!初めて投稿します。",
-    "reply_for": null,
-    "post_id": 1,
-    "posted_at": 1672138696.5741038,
-    "posted_by": 1
-  },
-  {
-    "message": "DaisyUI最高！一番好きなUIフレームワークです\nTailwindCSS最高！最高！",
-    "reply_for": null,
-    "post_id": 1,
-    "posted_at": 1672138696.5741038,
-    "posted_by": 1
-  },
-  {
-    "message": "Me too!",
-    "reply_for": null,
-    "post_id": 1,
-    "posted_at": 1672138696.5741038,
-    "posted_by": 1
-  },
-]
-
-
-
 </script>
 
 <template>
