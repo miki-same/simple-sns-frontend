@@ -12,9 +12,9 @@ const checkLogin = () => {
   return localStorage.getItem('bearer_token') !== null;
 }
 
-const getCurrentUserName = ():string => {
+const getCurrentUserName = (): string => {
   const currentUserName = localStorage.getItem('username');
-  return currentUserName!==null ? currentUserName : "";
+  return currentUserName !== null ? currentUserName : "";
 }
 
 const isLogin = ref<boolean>(checkLogin());
@@ -197,7 +197,11 @@ const createPost = () => {
           <a class="btn btn-ghost normal-case text-xl">Simplest</a>
         </div>
         <div v-if="isLogin">
-          <p class="text-xl text-blue-600">{{ username }}</p>
+          <div class="avatar online placeholder">
+            <div class="bg-neutral-focus text-neutral-content rounded-full w-16">
+              <span class="text-xl">{{ username.slice(0, 2) }}</span>
+            </div>
+          </div>
           <!-- The button to open modal -->
           <label for="login-btn" class="btn flex-none">ログアウト</label>
           <!-- Put this part before </body> tag -->
@@ -264,11 +268,14 @@ const createPost = () => {
 
         <body class="my-3">
 
-          <textarea placeholder="Type your thoughts!" class="textarea textarea-primary w-96 h-28 max-w-xs mb-8"
+          <textarea placeholder="What's going on?" class="textarea textarea-primary w-96 h-28 max-w-xs mb-8"
             v-model="createPostForm.message"></textarea>
           <button class="btn btn-primary" v-on:click="createPost">投稿</button>
 
           <div class="container">
+            <button class="btn" v-on:click="getAllPosts">
+              リロード
+            </button>
             <ul>
               <li v-for="post in posts" :key="post.post_id">
                 <div class="card w-full bg-base-100 shadow-xl mx-auto mb-3">
