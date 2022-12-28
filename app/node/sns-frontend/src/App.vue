@@ -8,6 +8,18 @@ const loginForm = reactive<loginState>({
   password: ""
 });
 
+const checkLogin = () => {
+  return localStorage.getItem('bearer_token') !== null;
+}
+
+const getCurrentUserName = ():string => {
+  const currentUserName = localStorage.getItem('username');
+  return currentUserName!==null ? currentUserName : "";
+}
+
+const isLogin = ref<boolean>(checkLogin());
+const username = ref<string>(getCurrentUserName());
+
 interface loginState {
   username: string
   password: string
@@ -27,6 +39,14 @@ interface registerState {
   password: string
 }
 
+const createPostForm = reactive<createPostState>({
+  message: ""
+})
+
+interface createPostState {
+  message: string
+}
+
 type typeOfPosts = {
   message: string
   reply_for: number | null
@@ -38,6 +58,11 @@ type typeOfPosts = {
 
 
 onMounted(() => {
+  console.log(isLogin);
+  getAllPosts();
+})
+
+const getAllPosts = () => {
   const endPoint: string = 'https://sns-fastapi-eidnhgfbzq-an.a.run.app/posts';
   axios.get(
     endPoint
@@ -49,7 +74,7 @@ onMounted(() => {
       }
     }
   )
-})
+}
 
 const getUserName = (userId: number) => {
   const animals = ['パンダ', 'ワニ', 'キツネ', 'クマ', 'ヒツジ', 'サル', 'タコ'];
@@ -81,7 +106,23 @@ const login = () => {
     .then(res => {
       alert("ログイン成功！");
       console.log(res);
-
+      localStorage.setItem('bearer_token', res.data.access_token);
+      isLogin.value = true;
+      axios.get('https://sns-fastapi-eidnhgfbzq-an.a.run.app/users/me',
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("bearer_token")}`
+          }
+        }
+      )
+        .then(res => {
+          console.log("ユーザー情報を取得");
+          localStorage.setItem('username', res.data.username);
+          username.value = res.data.username;
+        })
+        .catch(e => {
+          console.log("ユーザー情報取得に失敗しました");
+        })
     })
     .catch(e => {
       alert("ログインに失敗しました");
@@ -89,17 +130,23 @@ const login = () => {
     })
 }
 
+const logout = () => {
+  isLogin.value = false;
+  localStorage.removeItem("username");
+  localStorage.removeItem("bearer_token");
+}
+
 const register = () => {
   axios.post('https://sns-fastapi-eidnhgfbzq-an.a.run.app/users',
-  {
-    username:registerForm.username,
-    nickname:registerForm.nickname,
-    email:registerForm.email,
-    password:registerForm.password
-  })
+    {
+      username: registerForm.username,
+      nickname: registerForm.nickname,
+      email: registerForm.email,
+      password: registerForm.password
+    })
     .then(res => {
       alert('登録成功！');
-      console.log(res)
+      console.log(res);
     })
     .catch(e => {
       alert("登録に失敗しました");
@@ -107,6 +154,30 @@ const register = () => {
     })
 }
 
+const createPost = () => {
+  if (!(localStorage.getItem("bearer_token"))) {
+    alert('ログインしてください！');
+  }
+  else if (createPostForm.message === "") {
+    alert('本文を入力してください！');
+  } else {
+    axios.post('https://sns-fastapi-eidnhgfbzq-an.a.run.app/posts',
+      {
+        message: createPostForm.message,
+      }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("bearer_token")}`
+      }
+    }
+    ).then(res => {
+      createPostForm.message = "";
+      getAllPosts();
+    }).catch(e => {
+      alert("投稿に失敗しました");
+      console.log(e);
+    })
+  }
+}
 </script>
 
 <template>
@@ -125,43 +196,65 @@ const register = () => {
         <div class="flex-1">
           <a class="btn btn-ghost normal-case text-xl">Simplest</a>
         </div>
+        <div v-if="isLogin">
+          <p class="text-xl text-blue-600">{{ username }}</p>
+          <!-- The button to open modal -->
+          <label for="login-btn" class="btn flex-none">ログアウト</label>
+          <!-- Put this part before </body> tag -->
+          <input type="checkbox" id="login-btn" class="modal-toggle" />
+          <div class="modal">
+            <div class="modal-box">
+              <h4 class="normal-case text-2xl font-midium">ログアウトしますか？</h4>
+              <button class="btn btn-primary w-full max-w-xs" @click="logout">ログアウト</button>
+              <div class="modal-action">
+                <label for="login-btn" class="btn">閉じる</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else>
+          <!-- The button to open modal -->
+          <label for="login-btn" class="btn flex-none">ログイン</label>
+          <!-- Put this part before </body> tag -->
+          <input type="checkbox" id="login-btn" class="modal-toggle" />
+          <div class="modal">
+            <div class="modal-box">
+              <h4 class="normal-case text-2xl font-midium">SimpleSNSへログイン</h4>
+              <!--TODO: ログインを実装 ログインボタンを閉じるボタンに変更-->
+              <input type="text" placeholder="ID" class="input input-bordered w-full max-w-xs"
+                v-model="loginForm.username" />
+              <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs"
+                v-model="loginForm.password" />
+              <button class="btn btn-primary w-full max-w-xs" @click="login">ログイン</button>
+              <div class="modal-action">
+                <label for="login-btn" class="btn">閉じる</label>
+              </div>
+            </div>
+          </div>
 
-        <!-- The button to open modal -->
-        <label for="login-btn" class="btn flex-none">ログイン</label>
-        <!-- Put this part before </body> tag -->
-        <input type="checkbox" id="login-btn" class="modal-toggle" />
-        <div class="modal">
-          <div class="modal-box">
-            <h4 class="normal-case text-2xl font-midium">SimpleSNSへログイン</h4>
-            <!--TODO: ログインを実装 ログインボタンを閉じるボタンに変更-->
-            <input type="text" placeholder="ID" class="input input-bordered w-full max-w-xs"
-              v-model="loginForm.username" />
-            <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs"
-              v-model="loginForm.password" />
-            <button class="btn btn-primary w-full max-w-xs" @click="login">ログイン</button>
-            <div class="modal-action">
-              <label for="login-btn" class="btn">閉じる</label>
+          <!-- The button to open modal -->
+          <label for="register-btn" class="btn flex-none">新規登録</label>
+          <!-- Put this part before </body> tag -->
+          <input type="checkbox" id="register-btn" class="modal-toggle" />
+          <div class="modal">
+            <div class="modal-box">
+              <h4 class="normal-case text-2xl font-midium">SimpleSNSへ登録</h4>
+              <input type="text" placeholder="username" class="input input-bordered w-full max-w-xs"
+                v-model="registerForm.username" />
+              <input type="text" placeholder="nickname" class="input input-bordered w-full max-w-xs"
+                v-model="registerForm.nickname" />
+              <input type="text" placeholder="e-mail" class="input input-bordered w-full max-w-xs"
+                v-model="registerForm.email" />
+              <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs"
+                v-model="registerForm.password" />
+              <button class="btn btn-primary w-full max-w-xs" @click="register">新規登録</button>
+              <div class="modal-action">
+                <label for="register-btn" class="btn">閉じる</label>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- The button to open modal -->
-        <label for="register-btn" class="btn flex-none">新規登録</label>
-        <!-- Put this part before </body> tag -->
-        <input type="checkbox" id="register-btn" class="modal-toggle" />
-        <div class="modal">
-          <div class="modal-box">
-            <h4 class="normal-case text-2xl font-midium">SimpleSNSへ登録</h4>
-            <input type="text" placeholder="username" class="input input-bordered w-full max-w-xs" v-model="registerForm.username"/>
-            <input type="text" placeholder="nickname" class="input input-bordered w-full max-w-xs" v-model="registerForm.nickname"/>
-            <input type="text" placeholder="e-mail" class="input input-bordered w-full max-w-xs" v-model="registerForm.email"/>
-            <input type="password" placeholder="Password" class="input input-bordered w-full max-w-xs" v-model="registerForm.password"/>
-            <button class="btn btn-primary w-full max-w-xs" @click="register">新規登録</button>
-            <div class="modal-action">
-              <label for="register-btn" class="btn">閉じる</label>
-            </div>
-          </div>
-        </div>
       </div>
     </header>
 
@@ -170,11 +263,10 @@ const register = () => {
       <div class="drawer-content">
 
         <body class="my-3">
-          <form v-on:submit="foo">
-            <textarea placeholder="Type your thoughts!"
-              class="textarea textarea-primary w-96 h-28 max-w-xs mb-8"></textarea>
-            <button class="btn btn-primary">投稿</button>
-          </form>
+
+          <textarea placeholder="Type your thoughts!" class="textarea textarea-primary w-96 h-28 max-w-xs mb-8"
+            v-model="createPostForm.message"></textarea>
+          <button class="btn btn-primary" v-on:click="createPost">投稿</button>
 
           <div class="container">
             <ul>
