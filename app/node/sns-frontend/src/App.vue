@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { onBeforeMount, onMounted, reactive, ref } from 'vue'
 import axios from 'axios'
+import Card from './components/Card.vue'
+import InputForm from './components/InputForm.vue'
+import LogoutForm from './components/LogoutForm.vue'
+
+onMounted(() => {
+  console.log(isLogin);
+  getAllPosts();
+})
 
 const posts = ref<Array<typeOfPosts>>([]);
 const loginForm = reactive<loginState>({
@@ -17,8 +25,29 @@ const getCurrentUserName = (): string => {
   return currentUserName !== null ? currentUserName : "";
 }
 
+const getCurrentUserId = (): number|null => {
+  const currentUserId = localStorage.getItem('user_id');
+  return currentUserId !== null ? parseInt(currentUserId): null;
+}
+
 const isLogin = ref<boolean>(checkLogin());
 const username = ref<string>(getCurrentUserName());
+const userId = ref<Number|null>(getCurrentUserId());
+
+const refLogin = () => {
+  return isLogin.value;
+}
+
+const setIsLogin = (state: boolean) => {
+  isLogin.value = state;
+}
+
+const stateLogout = () => {
+  isLogin.value = false;
+}
+const stateLogin = () => {
+  isLogin.value = true;
+}
 
 interface loginState {
   username: string
@@ -55,20 +84,32 @@ type typeOfPosts = {
   posted_by: number
 }
 
-
-
-onMounted(() => {
-  console.log(isLogin);
-  getAllPosts();
-})
-
 const getAllPosts = () => {
   const endPoint: string = 'https://sns-fastapi-eidnhgfbzq-an.a.run.app/posts';
   axios.get(
     endPoint
   ).then(
-    (response) => {
-      posts.value = response.data.reverse();
+    (res) => {
+      posts.value = res.data.reverse();
+      for (const post of posts.value) {
+        console.log(post.message);
+      }
+    }
+  )
+}
+
+const getFollowingPosts = () => {
+  const endPoint: string = 'https://sns-fastapi-eidnhgfbzq-an.a.run.app/posts/following';
+  axios.get(
+    endPoint,
+    {
+      params:{
+        user_id: getCurrentUserId()
+      }
+    }
+  ).then(
+    (res) => {
+      posts.value = res.data.reverse();
       for (const post of posts.value) {
         console.log(post.message);
       }
@@ -81,11 +122,6 @@ const getUserName = (userId: number) => {
   const idx = (userId * 10520184081 + userId * 455955227) % animals.length;
   return '匿名' + animals[idx];
 }
-
-const foo = () => {
-  console.log("posted!");
-}
-
 
 const unixTimeToDate = (time: number) => {
   let dateTime = new Date(time * 1000);
@@ -107,7 +143,7 @@ const login = () => {
       alert("ログイン成功！");
       console.log(res);
       localStorage.setItem('bearer_token', res.data.access_token);
-      isLogin.value = true;
+      stateLogin();
       axios.get('https://sns-fastapi-eidnhgfbzq-an.a.run.app/users/me',
         {
           headers: {
@@ -118,7 +154,9 @@ const login = () => {
         .then(res => {
           console.log("ユーザー情報を取得");
           localStorage.setItem('username', res.data.username);
+          localStorage.setItem('user_id', res.data.user_id)
           username.value = res.data.username;
+          userId.value = res.data.user_id;
         })
         .catch(e => {
           console.log("ユーザー情報取得に失敗しました");
@@ -131,8 +169,9 @@ const login = () => {
 }
 
 const logout = () => {
-  isLogin.value = false;
+  stateLogout();
   localStorage.removeItem("username");
+  localStorage.removeItem("user_id");
   localStorage.removeItem("bearer_token");
 }
 
@@ -182,7 +221,6 @@ const createPost = () => {
 
 <template>
   <div class="w-full mx-auto">
-
     <header>
       <div class="navbar bg-base-100">
         <div class="flex-none">
@@ -202,19 +240,7 @@ const createPost = () => {
               <span class="text-xl">{{ username.slice(0, 2) }}</span>
             </div>
           </div>
-          <!-- The button to open modal -->
-          <label for="login-btn" class="btn flex-none">ログアウト</label>
-          <!-- Put this part before </body> tag -->
-          <input type="checkbox" id="login-btn" class="modal-toggle" />
-          <div class="modal">
-            <div class="modal-box">
-              <h4 class="normal-case text-2xl font-midium">ログアウトしますか？</h4>
-              <button class="btn btn-primary w-full max-w-xs" @click="logout">ログアウト</button>
-              <div class="modal-action">
-                <label for="login-btn" class="btn">閉じる</label>
-              </div>
-            </div>
-          </div>
+          <LogoutForm @logout="logout"/>
         </div>
         <div v-else>
           <!-- The button to open modal -->
@@ -278,24 +304,8 @@ const createPost = () => {
             </button>
             <ul>
               <li v-for="post in posts" :key="post.post_id">
-                <div class="card w-full bg-base-100 shadow-xl mx-auto mb-3">
-                  <div class="card-body">
-                    <h2 class="card-title">{{ getUserName(post.posted_by) }}</h2>
-                    <p class="text-lg">{{ post.message }}</p>
-                    <p>{{ unixTimeToDate(post.posted_at) }}</p>
-                    <div class="card-actions justify-end">
-                      <button class="btn btn-primary">返信</button>
-                      <label class="swap swap-rotate text-5xl">
-
-                        <!-- this hidden checkbox controls the state -->
-                        <input type="checkbox" />
-                        <div class="swap-on">💖</div>
-                        <div class="swap-off">🤍</div>
-                      </label>
-
-                    </div>
-                  </div>
-                </div>
+                <Card :username=getUserName(post.posted_by) :message=post.message
+                  :posted_at=unixTimeToDate(post.posted_at)></Card>
               </li>
             </ul>
           </div>
@@ -306,8 +316,8 @@ const createPost = () => {
         <label for="my-drawer" class="drawer-overlay"></label>
         <ul class="menu p-4 w-80 bg-base-100 text-base-content">
           <!-- Sidebar content here -->
-          <li><a>フォロー</a></li>
-          <li><a>フォロワー</a></li>
+          <li><a v-on:click="getAllPosts">全ての投稿</a></li>
+          <li><a v-on:click="getFollowingPosts">フォローユーザーの投稿</a></li>
 
         </ul>
       </div>
