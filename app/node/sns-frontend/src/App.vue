@@ -4,6 +4,8 @@ import axios from 'axios'
 import Card from './components/Card.vue'
 import InputForm from './components/InputForm.vue'
 import LogoutForm from './components/LogoutForm.vue'
+import ChatBubbleUser from './components/ChatBubbleUser.vue'
+import ChatBubbleOther from './components/ChatBubbleOther.vue'
 
 onMounted(() => {
   console.log(isLogin);
@@ -304,8 +306,14 @@ const createPost = () => {
             </button>
             <ul>
               <li v-for="post in posts" :key="post.post_id">
-                <Card :username=getUserName(post.posted_by) :message=post.message
-                  :posted_at=unixTimeToDate(post.posted_at)></Card>
+                <div v-if="post.posted_by===getCurrentUserId()">
+                <ChatBubbleUser :username=getCurrentUserName() :message=post.message
+                  :posted_at=unixTimeToDate(post.posted_at)></ChatBubbleUser>
+                </div>
+                <div v-else>
+                  <ChatBubbleOther :username=getUserName(post.posted_by) :message=post.message
+                  :posted_at=unixTimeToDate(post.posted_at)></ChatBubbleOther>
+                </div>
               </li>
             </ul>
           </div>
